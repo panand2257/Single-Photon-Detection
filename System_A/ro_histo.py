@@ -1,9 +1,3 @@
-'''
-Author: Pratyush Anand (anand43@mit.edu)
-Date: Jan 3, 2024
-'''
-
-
 from qutip import *
 import qutip as qt
 import numpy as np
@@ -20,7 +14,7 @@ up = basis(Na, 1)
 down_pr = basis(Na, 2)
 up_pr = basis(Na, 3)
 
-N_c = 5 #Set the limit on fock state for the cavity field
+N_c = 8 #Set the limit on fock state for the cavity field
 
 
 if __name__ == '__main__':
@@ -28,27 +22,30 @@ if __name__ == '__main__':
     psi1 = T(basis(N_c, 0), up)
     psi0 = T(basis(N_c, 0), down)
 
-    time_scale = 10000
-    t_up = 1.0e-6
+    fact = 1e-6
+    time_scale = 50000
+    t_up = 1.0e-6/fact
     delta_t = t_up/time_scale
     tlist = np.linspace(0,t_up,time_scale)
     numb = 100
-    ntraj = 1000
+    ntraj = 200
 
     #Defining |MW mode, NV spin> == |b, nv>
     c = destroy(N_c) 
 
-    w_las = 2*np.pi*406.7e12
-    w_up_up = 2*np.pi*406.7e12 #Hz
-    Delta = 2*np.pi*2e9 #Hz
+    w_las = 2*np.pi*406.7e12 * fact
+    w_up_up = 2*np.pi*406.7e12 * fact #Hz
+    Delta = 2*np.pi*2.5e9 * fact #Hz
     w_down_down = (w_up_up - Delta) #Hz 
 
-    g = 2*np.pi *8e9 #Hz
-    kappa = 2*np.pi*21e9 #Hz
+    g = 2*np.pi *8e9 * fact#Hz
+    kappa = 2*np.pi*21e9 * fact#Hz
     epsilon = np.sqrt(0.01 * 2 * g*g/kappa)
-    t_ro = 240e-9 #sec
+    t_ro = 240e-9/fact #sec
 
-    with open("histo.txt", "a") as mf:
+    tlist = np.linspace(0,t_ro,time_scale)
+
+    with open("histo_8.txt", "a") as mf:
         print(('{0:9s}   {1:9s}   {2:9s}'.format('iter', 'N0', 'N1')), file=mf)
 
 
@@ -74,8 +71,8 @@ if __name__ == '__main__':
     eta = 0.85
     
 
-    Gamma_up = 2*np.pi * 0.123e9
-    Gamma_down = 2*np.pi * 0.123e9
+    Gamma_up = 2*np.pi * 0.123e9 * fact
+    Gamma_down = 2*np.pi * 0.123e9 * fact
 
     C = 2*g*g/(kappa*Gamma_up)
 
@@ -83,7 +80,7 @@ if __name__ == '__main__':
     gamma_1 = Gamma_up * 1/(1+cyc)
     gamma_2 = Gamma_down * 1/(1+cyc)
     gamma_3 = Gamma_down * cyc/(1+cyc)
-    gamma_d = 2*np.pi * 0.25e6
+    gamma_d = 2*np.pi * 0.25e6 * fact
 
     ### Defining collapse operators
 
@@ -97,7 +94,7 @@ if __name__ == '__main__':
     c_ops = [c0, c1, c2, c3, c4, c5]
     #e_ops = [T(qeye(N_c), qt.ket2dm(up)), T(qeye(N_c), qt.ket2dm(down)), T(c.dag()*c, qeye(Na)), c0]
 
-
+    print('hi')
     me1 = mcsolve(H, psi1, tlist, c_ops, [], [ntraj])#, options=Options(store_states=True))
     me0 = mcsolve(H, psi0, tlist, c_ops, [], [ntraj])#, options=Options(store_states=True))
 
@@ -122,7 +119,7 @@ if __name__ == '__main__':
             if(iter2 == 0):
                 n_1 += 1
 
-        with open("histo.txt", "a") as mf:
+        with open("histo_8.txt", "a") as mf:
             print(('{0:.3e}   {1:.6e}   {2:.6e}'.format(iter, n_0, n_1)), file=mf)
 
         N_0.append(n_0)
@@ -140,8 +137,8 @@ if __name__ == '__main__':
         term = 0.5*(np.power(N_0_av,j)*np.exp(-1*N_0_av) - np.power(N_1_av,j)*np.exp(-1*N_1_av))/math.factorial(j) 
         P_sum += term
 
-    print(N_0)
-    print(N_1)
+    # print(N_0)
+    # print(N_1)
     print(N_0_av)
     print(N_1_av)
     print(M)
@@ -150,21 +147,21 @@ if __name__ == '__main__':
 
     fig = plt.figure()
     ax = fig.add_subplot()
-    # plt.ylabel('Population')
-    # plt.xlabel('time')
+    # # plt.ylabel('Population')
+    # # plt.xlabel('time')
    
-    plt.hist(N_0, density=True, alpha=0.5, color='red', label = '')
-    plt.hist(N_1, density=True, alpha=0.5, color='blue', label = '')
+    plt.hist(N_0, density=True, alpha=0.4, color='red', label = '')
+    plt.hist(N_1, density=True, alpha=0.4, color='blue', label = '')
     plt.xlabel('Counts/readout')
-    plt.ylabel('Number')
-    # plt.plot(tlist, me1.expect[0], 'o', color='red', label = 'up occupation')
-    # plt.plot(tlist, me1.expect[1], 'o', color='blue', label = 'down occupation')
-    #plt.plot(t_ro_arr, P_succ_arr, 'o', color='green', label = 'P_succ vs T_ro')
-    # # # plt.plot(tlist, mc.expect[1], 'o', color='blue', label ='MW occupation')
-    # # # plt.plot(tlist, mc.expect[2], 'o', color='green', label ='spin occupation')
-    # # # plt.plot(tlist, pulse_shape_ph,  'o', color='black', label ='phonon-spin pulse')
-    # # # plt.plot(tlist, pulse_shape_mw, 'o', color='orange', label ='MW-phonon pulse')
-    # # plt.plot(tlist, pulse_shape_laser, 'o', color='purple', label ='Laser drive')
+    plt.ylabel('Probability/bin-width')
+    # # plt.plot(tlist, me1.expect[0], 'o', color='red', label = 'up occupation')
+    # # plt.plot(tlist, me1.expect[1], 'o', color='blue', label = 'down occupation')
+    # #plt.plot(t_ro_arr, P_succ_arr, 'o', color='green', label = 'P_succ vs T_ro')
+    # # # # plt.plot(tlist, mc.expect[1], 'o', color='blue', label ='MW occupation')
+    # # # # plt.plot(tlist, mc.expect[2], 'o', color='green', label ='spin occupation')
+    # # # # plt.plot(tlist, pulse_shape_ph,  'o', color='black', label ='phonon-spin pulse')
+    # # # # plt.plot(tlist, pulse_shape_mw, 'o', color='orange', label ='MW-phonon pulse')
+    # # # plt.plot(tlist, pulse_shape_laser, 'o', color='purple', label ='Laser drive')
     ax.set_aspect(1.0/ax.get_data_ratio(), adjustable='box')
-    #plt.legend()
+    # #plt.legend()
     plt.show()
